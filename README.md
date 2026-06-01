@@ -53,6 +53,12 @@ UDBYDER_SYSTEM_ID=ABxxxxxx
 
 # Standard-institutionsliste (bruges når ingen instnr angives på kommandolinjen)
 INSTITUTIONS=101088,101155
+
+# Logniveau: DEBUG, INFO, WARNING eller ERROR (standard: INFO)
+LOG_LEVEL=INFO
+
+# Valgfri logfil — udelad for kun at logge til konsollen
+# LOG_FILE=stileksport.log
 ```
 
 > **Vigtigt:** Certifikatet og den private nøgle bør ligge **offline** og **uden for projektmappen**.
@@ -160,9 +166,16 @@ Hvis et af trinene fejler, afbrydes kaldet med en fejlmeddelelse og exit-kode 1.
 
 ```
 .
-├── main.py            # SOAP-klient og kommandolinjegrænseflade
-├── .env               # Lokale indstillinger (gitignored)
-├── .env.example       # Skabelon til .env
+├── main.py              # SOAP-klient og kommandolinjegrænseflade
+├── ca/
+│   ├── oces-root-ca.pem         # Den Danske Stat OCES rod-CA
+│   └── oces-intermediate-ca.pem # Den Danske Stat OCES udstedende-CA 1
+├── .env                 # Lokale indstillinger — gitignored
+├── .env.example         # Skabelon til .env
 ├── .gitignore
+├── LICENSE
+├── README.md
 └── requirements.txt
 ```
+
+Certifikat og privat nøgle opbevares **uden for** projektmappen (se [Konfiguration](#konfiguration)).
