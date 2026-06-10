@@ -186,8 +186,6 @@ python wsiidentifikation.py brugerid --cpr 1234567890
 python wsiidentifikation.py cpr --bruger jens1234
 ```
 
-> **OBS:** Svarfiler indeholder CPR-numre og er gitignored som `idi_*.xml`. Håndtér dem i overensstemmelse med persondatalovgivningen.
-
 > `hello` returnerer konsekvent HTTP 500 fra STILs server.
 
 ---
@@ -221,7 +219,7 @@ python wsaimport.py aftaler
 
 ## Logging
 
-Klienten logger til konsollen via Pythons standard `logging`-modul. Adfærden styres med to valgfrie `.env`-variabler:
+Klienterne logger til konsollen via Pythons standard `logging`-modul. Adfærden styres med to valgfrie `.env`-variabler:
 
 ```ini
 # Logniveau: DEBUG, INFO, WARNING eller ERROR (standard: INFO)
@@ -294,5 +292,3 @@ CA-certifikaterne hentes fra [ca1.gov.dk](https://www.ca1.gov.dk/certifikater/) 
 ├── README.md
 └── requirements.txt
 ```
-
-Certifikat og privat nøgle opbevares **uden for** projektmappen (se [Konfiguration](#konfiguration)).
