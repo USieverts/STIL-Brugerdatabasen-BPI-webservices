@@ -1,6 +1,6 @@
 # SOAP-klienter STIL BPI-webservices
 
-Python-klienter til STILs [Brugerdatabasen BPI-webservices](https://viden.stil.dk/spaces/INFRA2/pages/2360658/Unilogin+SkoleGrunddata+BPI-webservices).
+Soap-klienter til STILs [Brugerdatabasen BPI-webservices](https://viden.stil.dk/spaces/INFRA2/pages/2360658/Unilogin+SkoleGrunddata+BPI-webservices).
 
 Klienterne håndterer WS-Security-autentificering med OCES3-certifikat og understøtter alle operationer i den pågældende webservice. Svar verificeres automatisk mod STILs OCES3-certifikatkæde.
 
