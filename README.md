@@ -1,4 +1,4 @@
-# STIL BPI-webservices — Python SOAP-klienter
+# SOAP-klienter STIL BPI-webservices
 
 Python-klienter til STILs [Brugerdatabasen BPI-webservices](https://viden.stil.dk/spaces/INFRA2/pages/2360658/Unilogin+SkoleGrunddata+BPI-webservices).
 
