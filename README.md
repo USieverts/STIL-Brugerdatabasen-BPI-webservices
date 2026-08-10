@@ -219,7 +219,7 @@ python wsaimport.py aftaler
 
 ## Logging
 
-Klienterne logger til konsollen via Pythons standard `logging`-modul. Adfærden styres med to valgfrie `.env`-variabler:
+Klienterne logger til konsollen via Pythons standard `logging`modul. Adfærden styres med to valgfrie `.env`-variabler:
 
 ```ini
 # Logniveau: DEBUG, INFO, WARNING eller ERROR (standard: INFO)
