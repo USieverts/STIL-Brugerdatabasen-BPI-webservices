@@ -79,6 +79,60 @@ if not UDBYDER_SYSTEM_ID:
 
 ENDPOINT = "https://brugerdatabasen.stil.dk/bpi/wsieksport/7"
 
+
+def _env_bool(name: str) -> bool | None:
+    """Læser en valgfri boolesk miljøvariabel. Returnerer None hvis den ikke er sat."""
+    værdi = os.getenv(name)
+    if værdi is None or værdi.strip() == "":
+        return None
+    return værdi.strip().lower() in ("1", "true", "ja", "yes")
+
+
+def _env_list(name: str) -> list[str] | None:
+    """Læser en valgfri kommasepareret miljøvariabel som liste. Returnerer None hvis ikke sat."""
+    værdi = os.getenv(name)
+    if værdi is None or værdi.strip() == "":
+        return None
+    liste = [v.strip() for v in værdi.split(",") if v.strip()]
+    return liste or None
+
+
+# STILs dataminimeringsfiltre til wsiEKSPORT — se
+# https://viden.stil.dk/spaces/INFRA2/pages/295109152/wsiEKSPORT+Dataminimeringsfiltre
+# Udelades et filter i .env, bruges STILs egen standard (typisk: alt medtages).
+
+# Filter 1 — CPR-numre. Gælder kun mellem/fuld/fuld-myndighed. STILs standard: false (udelades).
+INKLUDER_CPR = _env_bool("INKLUDER_CPR")
+
+# Filter 2 — klassetrin. Gælder alle fire eksporttyper. STILs standard: alle klassetrin.
+# Gyldige værdier: DT, 0-10, U1, U2, U3, U4, VU, Andet.
+KLASSETRIN = _env_list("KLASSETRIN")
+_KLASSETRIN_GYLDIGE = {
+    "DT", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    "U1", "U2", "U3", "U4", "VU", "Andet",
+}
+if KLASSETRIN and (ukendte := set(KLASSETRIN) - _KLASSETRIN_GYLDIGE):
+    raise EnvironmentError(
+        f"Ugyldigt klassetrin i KLASSETRIN: {', '.join(sorted(ukendte))}. "
+        f"Gyldige værdier: {', '.join(sorted(_KLASSETRIN_GYLDIGE))}."
+    )
+
+# Filter 3 — aktørtyper. Gælder alle fire eksporttyper. STILs standard: alle aktørtyper.
+# Gyldige værdier: elever, medarbejdere, eksterne, kontaktpersoner
+# (kontaktpersoner kan iflg. STIL kun vælges sammen med elever i fuld/fuld-myndighed).
+AKTOERTYPER = _env_list("AKTOERTYPER")
+_AKTOERTYPE_FELTER = {
+    "elever": "inkluderElever",
+    "medarbejdere": "inkluderMedarbejdere",
+    "eksterne": "inkluderEksterne",
+    "kontaktpersoner": "inkluderKontaktpersoner",
+}
+if AKTOERTYPER and (ukendte := {a.lower() for a in AKTOERTYPER} - _AKTOERTYPE_FELTER.keys()):
+    raise EnvironmentError(
+        f"Ukendt aktørtype i AKTOERTYPER: {', '.join(sorted(ukendte))}. "
+        f"Gyldige værdier: {', '.join(_AKTOERTYPE_FELTER)}."
+    )
+
 # ---------------------------------------------------------------------------
 # Namespace- og algoritmekonstanter
 # ---------------------------------------------------------------------------
@@ -456,31 +510,76 @@ def hello_world_with_certificate() -> str:
 # Offentlige operationer — eksporterXml* (kræver institutionsnummer)
 # ---------------------------------------------------------------------------
 
+def _byg_filtre(*, cpr: bool) -> etree._Element | None:
+    """Bygger STILs <eks:filtre>-element ud fra .env-indstillingerne KLASSETRIN, AKTOERTYPER
+    og (kun hvis cpr=True) INKLUDER_CPR. Returnerer None hvis ingen filtre er angivet."""
+    filtre = etree.Element(_q("eks", "filtre"))
+
+    if cpr and INKLUDER_CPR is not None:
+        cpr_filt = etree.SubElement(filtre, _q("eks", "cprFilter"))
+        etree.SubElement(cpr_filt, _q("eks", "inkluderCpr")).text = (
+            "true" if INKLUDER_CPR else "false"
+        )
+
+    if AKTOERTYPER:
+        valgte = {a.lower() for a in AKTOERTYPER}
+        akt_filt = etree.SubElement(filtre, _q("eks", "aktoertypeFilter"))
+        for aktoertype, felt in _AKTOERTYPE_FELTER.items():
+            etree.SubElement(akt_filt, _q("eks", felt)).text = (
+                "true" if aktoertype in valgte else "false"
+            )
+
+    if KLASSETRIN:
+        kt_filt = etree.SubElement(filtre, _q("eks", "klassetrinFilter"))
+        for klassetrin in KLASSETRIN:
+            etree.SubElement(kt_filt, _q("eks", "inkluderKlassetrin")).text = klassetrin
+
+    return filtre if len(filtre) else None
+
+
+def _tilføj_filtre(body: etree._Element, *, cpr: bool) -> None:
+    """Tilføjer STILs <eks:filtre>-element til body, hvis mindst ét filter er angivet i .env."""
+    filtre = _byg_filtre(cpr=cpr)
+    if filtre is not None:
+        body.append(filtre)
+
+
 def eksporter_xml_lille(instnr: str) -> str:
-    """Lille eksport: grupper, medlemmer og kontaktpersoner for én institution."""
+    """Lille eksport: grupper, medlemmer og kontaktpersoner for én institution.
+    Klassetrin/aktørtyper kan begrænses via KLASSETRIN/AKTOERTYPER i .env."""
     body = etree.Element(_q("eks", "eksporterXmlLille"))
     etree.SubElement(body, _q("eks", "instnr")).text = instnr
+    _tilføj_filtre(body, cpr=False)
     return _call(f"{_NS['eks']}/eksporterXmlLille", body)
 
 
 def eksporter_xml_mellem(instnr: str) -> str:
-    """Mellemstor eksport: som lille, men inkluderer CPR-numre."""
+    """Mellemstor eksport: grupper, medlemmer og kontaktpersoner for én institution.
+    CPR-numre medtages kun hvis INKLUDER_CPR=true i .env (STILs standard er false).
+    Klassetrin/aktørtyper kan begrænses via KLASSETRIN/AKTOERTYPER i .env."""
     body = etree.Element(_q("eks", "eksporterXmlMellem"))
     etree.SubElement(body, _q("eks", "instnr")).text = instnr
+    _tilføj_filtre(body, cpr=True)
     return _call(f"{_NS['eks']}/eksporterXmlMellem", body)
 
 
 def eksporter_xml_fuld(instnr: str) -> str:
-    """Fuld eksport for én institution."""
+    """Fuld eksport for én institution.
+    CPR-numre medtages kun hvis INKLUDER_CPR=true i .env (STILs standard er false).
+    Klassetrin/aktørtyper kan begrænses via KLASSETRIN/AKTOERTYPER i .env."""
     body = etree.Element(_q("eks", "eksporterXmlFuld"))
     etree.SubElement(body, _q("eks", "instnr")).text = instnr
+    _tilføj_filtre(body, cpr=True)
     return _call(f"{_NS['eks']}/eksporterXmlFuld", body)
 
 
 def eksporter_xml_fuld_myndighed(instnr: str) -> str:
-    """Fuld eksport på myndighedsniveau for én institution."""
+    """Fuld eksport på myndighedsniveau for én institution.
+    CPR-numre medtages kun hvis INKLUDER_CPR=true i .env (STILs standard er false).
+    Klassetrin/aktørtyper kan begrænses via KLASSETRIN/AKTOERTYPER i .env."""
     body = etree.Element(_q("eks", "eksporterXmlFuldMyndighed"))
     etree.SubElement(body, _q("eks", "instnr")).text = instnr
+    _tilføj_filtre(body, cpr=True)
     return _call(f"{_NS['eks']}/eksporterXmlFuldMyndighed", body)
 
 
@@ -542,7 +641,7 @@ if __name__ == "__main__":
 Tilgængelige funktioner:
   hello                      Test certifikatforbindelsen
   lille          [instnr…]   Lille eksport
-  mellem         [instnr…]   Mellemstor eksport (inkl. CPR)
+  mellem         [instnr…]   Mellemstor eksport
   fuld           [instnr…]   Fuld eksport
   fuld-myndighed [instnr…]   Fuld eksport på myndighedsniveau
   aftaler-lille              Dataaftaler for lille eksport
@@ -552,6 +651,11 @@ Tilgængelige funktioner:
 
 En eller flere institutionsnumre kan angives på kommandolinjen eller som standard
 i .env via: INSTITUTIONS=101155,101126,101088
+
+STILs dataminimeringsfiltre kan styres via .env:
+  INKLUDER_CPR=true            CPR-numre i mellem/fuld/fuld-myndighed (standard: false)
+  KLASSETRIN=0,1,2,3           Begræns til udvalgte klassetrin (standard: alle)
+  AKTOERTYPER=elever,eksterne  Begræns til udvalgte aktørtyper (standard: alle)
 
 Eksempler:
   python main.py fuld-myndighed 101155 101126

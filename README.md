@@ -19,7 +19,7 @@ Den enkelte anvender er selv ansvarlig for at sikre, at implementering samt opbe
   - [Administrér organisations- og systemcertifikater](https://www.mitid-erhverv.dk/sadan-bruger-du-mitid-erhverv/administrer-certifikater/administrer-organisations-og-systemcertifikater/)
   - [Tilføj certifikat til udbydersystem](https://viden.stil.dk/spaces/OFFTILSLU/pages/343441603/Tilf%C3%B8j+certifikat)
 - Godkendte **dataaftaler** for udbydersystemet i STILs selvbetjeningsportal til de institutioner og eksporttyper der ønskes adgang til
-  - [Anmod om dataadgang](https://viden.stil.dk/spaces/OFFTILSLU/pages/299139418/Anmodning+om+data+fra+eller+p%C3%A5+vegne+af+institutioner+Dataadgange)
+  - [Anmod om tilslutning](https://viden.stil.dk/spaces/OFFTILSLU/pages/375095698/Anmod+om+tilslutning)
 
 ---
 
@@ -58,6 +58,11 @@ UDBYDER_SYSTEM_ID=ABxxxxxx
 # Standard-institutionsliste (bruges når ingen instnr angives på kommandolinjen)
 INSTITUTIONS=101088,101155
 
+# STILs dataminimeringsfiltre til wsieksport.py — se afsnittet "Dataminimeringsfiltre" nedenfor
+# INKLUDER_CPR=true
+# KLASSETRIN=0,1,2,3
+# AKTOERTYPER=elever,medarbejdere
+
 # Logniveau: DEBUG, INFO, WARNING eller ERROR (standard: INFO)
 LOG_LEVEL=INFO
 
@@ -95,7 +100,7 @@ python wsieksport.py <funktion> [instnr …] [--output MAPPE]
 |---|---|---|
 | ~~`hello`~~ | ~~Test certifikatforbindelsen~~ | — |
 | `lille` | Lille eksport (grupper, medlemmer, kontaktpersoner) | instnr … |
-| `mellem` | Mellemstor eksport (som lille + CPR-numre) | instnr … |
+| `mellem` | Mellemstor eksport (grupper, medlemmer, kontaktpersoner) | instnr … |
 | `fuld` | Fuld eksport for én institution | instnr … |
 | `fuld-myndighed` | Fuld eksport på myndighedsniveau | instnr … |
 | `aftaler-lille` | Dataaftaler for lille eksport | — |
@@ -111,6 +116,32 @@ python wsieksport.py aftaler-fuld
 ```
 
 > `hello` returnerer konsekvent HTTP 500 fra STILs server. Brug `aftaler-fuld` til forbindelsestest.
+
+#### Dataminimeringsfiltre
+
+`wsieksport.py` understøtter STILs tre [dataminimeringsfiltre](https://viden.stil.dk/spaces/INFRA2/pages/295109152/wsiEKSPORT+Dataminimeringsfiltre), der begrænser hvad der medtages i eksporten. Alle er valgfrie og styres via `.env` — udelades de, bruges STILs egen standard.
+
+| Filter | `.env`-variabel | Gælder for | STILs standard |
+|---|---|---|---|
+| 1 — CPR-numre | `INKLUDER_CPR` | `mellem`, `fuld`, `fuld-myndighed` | `false` (CPR udelades) |
+| 2 — Klassetrin | `KLASSETRIN` | Alle fire eksporttyper | Alle klassetrin |
+| 3 — Aktørtyper | `AKTOERTYPER` | Alle fire eksporttyper | Alle aktørtyper |
+
+```ini
+# Filter 1: CPR-numre med i mellem/fuld/fuld-myndighed
+INKLUDER_CPR=true
+
+# Filter 2: kun udvalgte klassetrin (kommasepareret)
+# Gyldige værdier: DT, 0-10, U1, U2, U3, U4, VU, Andet
+KLASSETRIN=4,5,6
+
+# Filter 3: kun udvalgte aktørtyper (kommasepareret)
+# Gyldige værdier: elever, medarbejdere, eksterne, kontaktpersoner
+# (kontaktpersoner kan iflg. STIL kun vælges sammen med elever, i fuld/fuld-myndighed)
+AKTOERTYPER=elever,eksterne
+```
+
+Filtrene kan frit kombineres. Angives en ugyldig værdi i `KLASSETRIN` eller `AKTOERTYPER`, afbrydes scriptet med en fejlmeddelelse ved opstart, inden der sendes noget til STIL.
 
 ---
 
