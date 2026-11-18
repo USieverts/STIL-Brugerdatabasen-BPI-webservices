@@ -15,3 +15,6 @@ imp_*.xml
 .venv/
 __pycache__/
 *.pyc
+
+# Mappe med filer specefikt til intern server
+til bifrost/
