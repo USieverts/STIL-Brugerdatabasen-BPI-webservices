@@ -16,5 +16,5 @@ imp_*.xml
 __pycache__/
 *.pyc
 
-# Mappe med filer specefikt til intern server
+# Mappe med filer til intern server
 til bifrost/

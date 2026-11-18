@@ -26,7 +26,11 @@ Den enkelte anvender er selv ansvarlig for at sikre, at implementering samt opbe
 ## Installation
 
 ```bash
-# Opret virtuelt miljø
+# klon projektet til en lokal mappe, eller downloade som ZIP-fil og udpak i en mappe efter eget valg
+git clone https://github.com/USieverts/STIL-Brugerdatabasen-BPI-webservices.git
+cd STIL-Brugerdatabasen-BPI-webservices
+
+# Opret og aktiver virtuelt miljø
 python -m venv .venv
 .venv\Scripts\activate        # Windows
 # source .venv/bin/activate   # Linux/macOS
