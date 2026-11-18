@@ -511,15 +511,10 @@ def hello_world_with_certificate() -> str:
 # ---------------------------------------------------------------------------
 
 def _byg_filtre(*, cpr: bool) -> etree._Element | None:
-    """Bygger STILs <eks:filtre>-element ud fra .env-indstillingerne KLASSETRIN, AKTOERTYPER
-    og (kun hvis cpr=True) INKLUDER_CPR. Returnerer None hvis ingen filtre er angivet."""
+    """Bygger STILs <eks:filtre>-element ud fra .env-indstillingerne AKTOERTYPER, KLASSETRIN
+    og (kun hvis cpr=True) INKLUDER_CPR. Rækkefølgen er dikteret af STILs skema
+    (cprFilter skal komme sidst). Returnerer None hvis ingen filtre er angivet."""
     filtre = etree.Element(_q("eks", "filtre"))
-
-    if cpr and INKLUDER_CPR is not None:
-        cpr_filt = etree.SubElement(filtre, _q("eks", "cprFilter"))
-        etree.SubElement(cpr_filt, _q("eks", "inkluderCpr")).text = (
-            "true" if INKLUDER_CPR else "false"
-        )
 
     if AKTOERTYPER:
         valgte = {a.lower() for a in AKTOERTYPER}
@@ -533,6 +528,12 @@ def _byg_filtre(*, cpr: bool) -> etree._Element | None:
         kt_filt = etree.SubElement(filtre, _q("eks", "klassetrinFilter"))
         for klassetrin in KLASSETRIN:
             etree.SubElement(kt_filt, _q("eks", "inkluderKlassetrin")).text = klassetrin
+
+    if cpr and INKLUDER_CPR is not None:
+        cpr_filt = etree.SubElement(filtre, _q("eks", "cprFilter"))
+        etree.SubElement(cpr_filt, _q("eks", "inkluderCpr")).text = (
+            "true" if INKLUDER_CPR else "false"
+        )
 
     return filtre if len(filtre) else None
 

@@ -1,12 +1,12 @@
 # SOAP-klienter STIL BPI-webservices
 
-Soap-klienter til STILs [Brugerdatabasen BPI-webservices](https://viden.stil.dk/spaces/INFRA2/pages/2360658/Unilogin+SkoleGrunddata+BPI-webservices).
+Soap-klienter til STILs [Brugerdatabasen BPI-webservices](https://viden.stil.dk/spaces/INFRA2/pages/2360658/Unilogin+SkoleGrunddata+BPI-webservices) udviklet til N. Zahles Skole.
 
-Klienterne håndterer WS-Security-autentificering med OCES3-certifikat og understøtter alle operationer i den pågældende webservice. Svar verificeres automatisk mod STILs OCES3-certifikatkæde.
+Klienterne håndterer autentificering med OCES3-certifikat og understøtter alle operationer i den pågældende webservice. Alle svar verificeres automatisk mod STILs OCES3-certifikatkæde.
 
 Klienterne stilles til rådighed uden nogen form for garanti (“as is”) og kan frit anvendes til test, evaluering og videreudvikling. 
 
-Den enkelte anvender er selv ansvarlig for at sikre, at implementering samt opbevaring og beskyttelse af OCES3-certifikatet og den tilhørende private nøgle sker i overensstemmelse med egne sikkerhedspolitikker og compliancekrav.
+Den enkelte anvender er selv ansvarlig for at sikre, at implementering samt opbevaring af OCES3-certifikatet og den private nøgle er i overensstemmelse med egne sikkerhedspolitikker.
 
 ---
 
